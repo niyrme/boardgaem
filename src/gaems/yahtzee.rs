@@ -13,24 +13,22 @@ pub mod rules;
 
 pub struct Yahtzee {
 	gameFinished: bool,
-	hand: Hand,
+	hand:         Hand,
 
-	ptsTop: HashMap<u16, u16>,
+	ptsTop:    HashMap<u16, u16>,
 	ptsBottom: HashMap<u16, u16>,
 
-	sumPreBonus: u16,
-	bonus: u16,
+	sumPreBonus:  u16,
+	bonus:        u16,
 	sumPostBonus: u16,
 
 	sumBottom: u16,
-	sumTop: u16,
-	total: u16,
+	sumTop:    u16,
+	total:     u16,
 }
 
 impl Yahtzee {
-	pub fn new() -> Self {
-		Yahtzee { hand: Hand::new(), gameFinished: false, ..Default::default() }
-	}
+	pub fn new() -> Self { Yahtzee { hand: Hand::new(), gameFinished: false, ..Default::default() } }
 
 	fn updateScoreboard(&mut self) -> HashMap<&str, u16> {
 		let mut values: [u16; 5] = Default::default();
@@ -73,23 +71,8 @@ impl Yahtzee {
 
 impl Default for Yahtzee {
 	fn default() -> Self {
-		let ptsTop: HashMap<u16, u16> = [
-			(1, 0),
-			(2, 0),
-			(3, 0),
-			(4, 0),
-			(5, 0),
-			(6, 0),
-		].iter().cloned().collect();
-		let ptsBottom: HashMap<u16, u16> = [
-			(7, 0),
-			(8, 0),
-			(9, 0),
-			(10, 0),
-			(11, 0),
-			(12, 0),
-			(13, 0),
-		].iter().cloned().collect();
+		let ptsTop: HashMap<u16, u16> = [(1, 0), (2, 0), (3, 0), (4, 0), (5, 0), (6, 0)].iter().cloned().collect();
+		let ptsBottom: HashMap<u16, u16> = [(7, 0), (8, 0), (9, 0), (10, 0), (11, 0), (12, 0), (13, 0)].iter().cloned().collect();
 
 		Yahtzee {
 			ptsTop,
@@ -245,22 +228,19 @@ impl Game for Yahtzee {
 
 					if field == 0 {
 						continue 'gameLoop;
-					}
-					else if (1..=6).contains(&field) {
+					} else if (1..=6).contains(&field) {
 						if self.ptsTop[&field] != 0 {
 							msg = format!("Field {} already filled in", field);
 							continue 'gameLoop;
 						}
 						let count = self.hand.countValue(field as u8) as u16;
 						if count != 0 {
-							self.ptsTop.insert(field, count* field);
-						}
-						else {
+							self.ptsTop.insert(field, count * field);
+						} else {
 							msg = format!("Need at least one of {}", field);
 							continue 'gameLoop;
 						}
-					}
-					else if (7..=13).contains(&field) {
+					} else if (7..=13).contains(&field) {
 						if self.ptsBottom[&field] != 0 {
 							msg = format!("Field {} already filled in", field);
 							continue 'gameLoop;
@@ -268,19 +248,19 @@ impl Game for Yahtzee {
 
 						match field {
 							7 => {
-							let mut fits = false;
-							for i in 1..=6 {
-								if self.hand.countValue(i) >= 3 {
-									fits = true;
-									self.ptsBottom.insert(field, self.hand.sum() as u16);
-									break;
+								let mut fits = false;
+								for i in 1..=6 {
+									if self.hand.countValue(i) >= 3 {
+										fits = true;
+										self.ptsBottom.insert(field, self.hand.sum() as u16);
+										break;
+									}
+								}
+								if !fits {
+									msg = String::from("Hand does not match reqirement");
+									continue 'gameLoop;
 								}
 							}
-							if !fits {
-								msg = String::from("Hand does not match reqirement");
-								continue 'gameLoop;
-							}
-						}
 							8 => {
 								let mut fits = false;
 								for i in 1..=6 {
@@ -356,12 +336,11 @@ impl Game for Yahtzee {
 								}
 							}
 							13 => {
-							self.ptsBottom.insert(field, self.hand.sum() as u16);
-						}
+								self.ptsBottom.insert(field, self.hand.sum() as u16);
+							}
 							_ => {}
 						}
-					}
-					else {
+					} else {
 						msg = format!("Field {} does not exist", field);
 						continue 'gameLoop;
 					}
