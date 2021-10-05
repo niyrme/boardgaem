@@ -485,30 +485,15 @@ impl Game for Yahtzee {
 	}
 
 	fn update(&mut self) {
-		self.sumPreBonus = [
-			self.ptsAces,
-			self.ptsTwos,
-			self.ptsThrees,
-			self.ptsFours,
-			self.ptsFives,
-			self.ptsSixes,
-		].iter().sum();
+		self.sumPreBonus = self.ptsAces + self.ptsTwos + self.ptsThrees + self.ptsFours + self.ptsFives + self.ptsSixes;
 
-		if self.sumPreBonus > 63 {
+		if self.sumPreBonus >= 63 {
 			self.bonus = 35;
 		}
 
-		self.sumPostBonus = self.sumPreBonus + self.sumPostBonus;
+		self.sumPostBonus = self.sumPreBonus + self.bonus;
 
-		self.sumBottom = [
-			self.threeOfAKind,
-			self.fourOfAKind,
-			self.fullHouse,
-			self.smallStraight,
-			self.bigStraight,
-			self.yahtzee,
-			self.chance,
-		].iter().sum();
+		self.sumBottom = self.threeOfAKind + self.fourOfAKind + self.fullHouse + self.smallStraight + self.bigStraight + self.yahtzee + self.chance;
 		self.sumTop = self.sumPostBonus;
 
 		self.total = self.sumTop + self.sumBottom;
