@@ -374,6 +374,12 @@ impl Game for Yahtzee {
 				}
 			}
 			self.update();
+
+			if self.gameFinished {
+				println!("GAME FINISHED!");
+				println!("Your score: {}", self.total);
+				return;
+			}
 		}
 	}
 
@@ -390,5 +396,7 @@ impl Game for Yahtzee {
 		self.sumTop = self.sumPostBonus;
 
 		self.total = self.sumTop + self.sumBottom;
+
+		self.gameFinished = self.ptsTop.values().all(|&v| v != 0) && self.ptsBottom.values().all(|&v| v != 0);
 	}
 }
