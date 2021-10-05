@@ -399,28 +399,36 @@ impl Game for Yahtzee {
 								msg = String::from("Small straight already filled in");
 								continue;
 							}
+							let mut success = false;
 							for i in 1..=3 {
 								if self.hand.countValue(i) >= 1 && self.hand.countValue(i + 1) >= 1 && self.hand.countValue(i + 2) >= 1 && self.hand.countValue(i + 3) >= 1 {
 									self.smallStraight = 30;
+									success = true;
 									break;
 								}
 							}
-							msg = String::from("Hand does not meet requirements");
-							continue;
+							if !success {
+								msg = String::from("Hand does not meet requirements");
+								continue;
+							}
 						}
 						11 => {
 							if self.bigStraight != 0 {
 								msg = String::from("Big straight already filled in");
 								continue;
 							}
+							let mut success = false;
 							for i in 1..=2 {
 								if self.hand.countValue(i) >= 1 && self.hand.countValue(i + 1) >= 1 && self.hand.countValue(i + 2) >= 1 && self.hand.countValue(i + 3) >= 1 && self.hand.countValue(i + 4) >= 1 {
 									self.bigStraight = 40;
+									success = true;
 									break;
 								}
 							}
-							msg = String::from("Hand does not meet requirements");
-							continue;
+							if !success {
+								msg = String::from("Hand does not meet requirements");
+								continue;
+							}
 						}
 						12 => {
 							if self.yahtzee != 0 {
