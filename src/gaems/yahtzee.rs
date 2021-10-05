@@ -14,53 +14,53 @@ pub mod rules;
 pub struct Yahtzee {
 	hand: Hand,
 
-	ptsAces: u16,
-	ptsTwos: u16,
+	ptsAces:   u16,
+	ptsTwos:   u16,
 	ptsThrees: u16,
-	ptsFours: u16,
-	ptsFives: u16,
-	ptsSixes: u16,
+	ptsFours:  u16,
+	ptsFives:  u16,
+	ptsSixes:  u16,
 
-	sumPreBonus: u16,
-	bonus: u16,
+	sumPreBonus:  u16,
+	bonus:        u16,
 	sumPostBonus: u16,
 
-	threeOfAKind: u16,
-	fourOfAKind: u16,
-	fullHouse: u16,
+	threeOfAKind:  u16,
+	fourOfAKind:   u16,
+	fullHouse:     u16,
 	smallStraight: u16,
-	bigStraight: u16,
-	yahtzee: u16,
-	chance: u16,
+	bigStraight:   u16,
+	yahtzee:       u16,
+	chance:        u16,
 
 	sumBottom: u16,
-	sumTop: u16,
-	total: u16,
+	sumTop:    u16,
+	total:     u16,
 }
 
 impl Yahtzee {
 	pub fn new() -> Self {
 		Yahtzee {
-			hand: Hand::new(),
-			ptsAces: Default::default(),
-			ptsTwos: Default::default(),
-			ptsThrees: Default::default(),
-			ptsFours: Default::default(),
-			ptsFives: Default::default(),
-			ptsSixes: Default::default(),
-			sumPreBonus: Default::default(),
-			bonus: Default::default(),
-			sumPostBonus: Default::default(),
-			threeOfAKind: Default::default(),
-			fourOfAKind: Default::default(),
-			fullHouse: Default::default(),
+			hand:          Hand::new(),
+			ptsAces:       Default::default(),
+			ptsTwos:       Default::default(),
+			ptsThrees:     Default::default(),
+			ptsFours:      Default::default(),
+			ptsFives:      Default::default(),
+			ptsSixes:      Default::default(),
+			sumPreBonus:   Default::default(),
+			bonus:         Default::default(),
+			sumPostBonus:  Default::default(),
+			threeOfAKind:  Default::default(),
+			fourOfAKind:   Default::default(),
+			fullHouse:     Default::default(),
 			smallStraight: Default::default(),
-			bigStraight: Default::default(),
-			yahtzee: Default::default(),
-			chance: Default::default(),
-			sumBottom: Default::default(),
-			sumTop: Default::default(),
-			total: Default::default(),
+			bigStraight:   Default::default(),
+			yahtzee:       Default::default(),
+			chance:        Default::default(),
+			sumBottom:     Default::default(),
+			sumTop:        Default::default(),
+			total:         Default::default(),
 		}
 	}
 
@@ -106,26 +106,26 @@ impl Yahtzee {
 impl Default for Yahtzee {
 	fn default() -> Self {
 		Yahtzee {
-			hand: Default::default(),
-			ptsAces: Default::default(),
-			ptsTwos: Default::default(),
-			ptsThrees: Default::default(),
-			ptsFours: Default::default(),
-			ptsFives: Default::default(),
-			ptsSixes: Default::default(),
-			sumPreBonus: Default::default(),
-			bonus: Default::default(),
-			sumPostBonus: Default::default(),
-			threeOfAKind: Default::default(),
-			fourOfAKind: Default::default(),
-			fullHouse: Default::default(),
+			hand:          Default::default(),
+			ptsAces:       Default::default(),
+			ptsTwos:       Default::default(),
+			ptsThrees:     Default::default(),
+			ptsFours:      Default::default(),
+			ptsFives:      Default::default(),
+			ptsSixes:      Default::default(),
+			sumPreBonus:   Default::default(),
+			bonus:         Default::default(),
+			sumPostBonus:  Default::default(),
+			threeOfAKind:  Default::default(),
+			fourOfAKind:   Default::default(),
+			fullHouse:     Default::default(),
 			smallStraight: Default::default(),
-			bigStraight: Default::default(),
-			yahtzee: Default::default(),
-			chance: Default::default(),
-			sumBottom: Default::default(),
-			sumTop: Default::default(),
-			total: Default::default(),
+			bigStraight:   Default::default(),
+			yahtzee:       Default::default(),
+			chance:        Default::default(),
+			sumBottom:     Default::default(),
+			sumTop:        Default::default(),
+			total:         Default::default(),
 		}
 	}
 }
@@ -156,10 +156,6 @@ fn paddingHelper(h: &Helper, _: &Handlebars, _: &Context, _: &mut RenderContext,
 }
 
 impl Game for Yahtzee {
-	fn start(&mut self) {
-		self.run()
-	}
-
 	fn run(&mut self) {
 		let mut handlebars = Handlebars::new();
 		handlebars.set_strict_mode(true);
@@ -176,7 +172,9 @@ impl Game for Yahtzee {
 		let mut rolls: u8 = 0;
 		let mut msg = String::new();
 		loop {
-			println!("{esc}c{}\n{}", handlebars.render("scoreboard", &self.updateScoreboard()).unwrap(), msg, esc=(27 as char));
+			println!("{esc}c{}\n{}", handlebars.render("scoreboard", &self.updateScoreboard()).unwrap(), msg, esc = (27 as char));
+			msg = String::new();
+
 			println!("Choose an action:");
 			println!("1. Re-roll all dice");
 			println!("2. Re-roll specific dice");
@@ -268,8 +266,7 @@ impl Game for Yahtzee {
 							let count = self.hand.countValue(1);
 							if count != 0 {
 								self.ptsAces = (self.hand.countValue(1) * 1) as u16;
-							}
-							else {
+							} else {
 								msg = String::from("Hand does not meet requirements");
 								continue;
 							}
@@ -282,8 +279,7 @@ impl Game for Yahtzee {
 							let count = self.hand.countValue(2);
 							if count != 0 {
 								self.ptsTwos = (self.hand.countValue(2) * 2) as u16;
-							}
-							else {
+							} else {
 								msg = String::from("Hand does not meet requirements");
 								continue;
 							}
@@ -296,8 +292,7 @@ impl Game for Yahtzee {
 							let count = self.hand.countValue(3);
 							if count != 0 {
 								self.ptsThrees = (self.hand.countValue(3) * 3) as u16;
-							}
-							else {
+							} else {
 								msg = String::from("Hand does not meet requirements");
 								continue;
 							}
@@ -310,8 +305,7 @@ impl Game for Yahtzee {
 							let count = self.hand.countValue(4);
 							if count != 0 {
 								self.ptsFours = (self.hand.countValue(4) * 4) as u16;
-							}
-							else {
+							} else {
 								msg = String::from("Hand does not meet requirements");
 								continue;
 							}
@@ -324,8 +318,7 @@ impl Game for Yahtzee {
 							let count = self.hand.countValue(5);
 							if count != 0 {
 								self.ptsFives = (self.hand.countValue(5) * 5) as u16;
-							}
-							else {
+							} else {
 								msg = String::from("Hand does not meet requirements");
 								continue;
 							}
@@ -338,8 +331,7 @@ impl Game for Yahtzee {
 							let count = self.hand.countValue(6);
 							if count != 0 {
 								self.ptsSixes = (self.hand.countValue(6) * 6) as u16;
-							}
-							else {
+							} else {
 								msg = String::from("Hand does not meet requirements");
 								continue;
 							}
@@ -391,16 +383,14 @@ impl Game for Yahtzee {
 							for i in 1..=6 {
 								if self.hand.countValue(i) == 2 {
 									double = i;
-								}
-								else if self.hand.countValue(i) == 3 {
+								} else if self.hand.countValue(i) == 3 {
 									triple = i;
 								}
 							}
 
 							if !(double == 0 && triple == 0) {
 								self.fullHouse = 25;
-							}
-							else {
+							} else {
 								msg = String::from("Hand does not meet requirements");
 							}
 						}
@@ -410,10 +400,7 @@ impl Game for Yahtzee {
 								continue;
 							}
 							for i in 1..=3 {
-								if self.hand.countValue(i) >= 1
-									&& self.hand.countValue(i + 1) >= 1
-									&& self.hand.countValue(i + 2) >= 1
-									&& self.hand.countValue(i + 3) >= 1 {
+								if self.hand.countValue(i) >= 1 && self.hand.countValue(i + 1) >= 1 && self.hand.countValue(i + 2) >= 1 && self.hand.countValue(i + 3) >= 1 {
 									self.smallStraight = 30;
 									break;
 								}
@@ -427,11 +414,7 @@ impl Game for Yahtzee {
 								continue;
 							}
 							for i in 1..=2 {
-								if self.hand.countValue(i) >= 1
-									&& self.hand.countValue(i + 1) >= 1
-									&& self.hand.countValue(i + 2) >= 1
-									&& self.hand.countValue(i + 3) >= 1
-									&& self.hand.countValue(i + 4) >= 1 {
+								if self.hand.countValue(i) >= 1 && self.hand.countValue(i + 1) >= 1 && self.hand.countValue(i + 2) >= 1 && self.hand.countValue(i + 3) >= 1 && self.hand.countValue(i + 4) >= 1 {
 									self.bigStraight = 40;
 									break;
 								}
