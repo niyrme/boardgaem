@@ -12,26 +12,15 @@ pub mod hand;
 pub mod rules;
 
 pub struct Yahtzee {
-	hand: Hand,
+	gameFinished: bool,
+	hand:         Hand,
 
-	ptsAces:   u16,
-	ptsTwos:   u16,
-	ptsThrees: u16,
-	ptsFours:  u16,
-	ptsFives:  u16,
-	ptsSixes:  u16,
+	ptsTop:    HashMap<u16, u16>,
+	ptsBottom: HashMap<u16, u16>,
 
 	sumPreBonus:  u16,
 	bonus:        u16,
 	sumPostBonus: u16,
-
-	threeOfAKind:  u16,
-	fourOfAKind:   u16,
-	fullHouse:     u16,
-	smallStraight: u16,
-	bigStraight:   u16,
-	yahtzee:       u16,
-	chance:        u16,
 
 	sumBottom: u16,
 	sumTop:    u16,
@@ -39,30 +28,7 @@ pub struct Yahtzee {
 }
 
 impl Yahtzee {
-	pub fn new() -> Self {
-		Yahtzee {
-			hand:          Hand::new(),
-			ptsAces:       Default::default(),
-			ptsTwos:       Default::default(),
-			ptsThrees:     Default::default(),
-			ptsFours:      Default::default(),
-			ptsFives:      Default::default(),
-			ptsSixes:      Default::default(),
-			sumPreBonus:   Default::default(),
-			bonus:         Default::default(),
-			sumPostBonus:  Default::default(),
-			threeOfAKind:  Default::default(),
-			fourOfAKind:   Default::default(),
-			fullHouse:     Default::default(),
-			smallStraight: Default::default(),
-			bigStraight:   Default::default(),
-			yahtzee:       Default::default(),
-			chance:        Default::default(),
-			sumBottom:     Default::default(),
-			sumTop:        Default::default(),
-			total:         Default::default(),
-		}
-	}
+	pub fn new() -> Self { Yahtzee { hand: Hand::new(), gameFinished: false, ..Default::default() } }
 
 	fn updateScoreboard(&mut self) -> HashMap<&str, u16> {
 		let mut values: [u16; 5] = Default::default();
@@ -77,22 +43,22 @@ impl Yahtzee {
 			("die3", values[2]),
 			("die4", values[3]),
 			("die5", values[4]),
-			("aces", self.ptsAces),
-			("twos", self.ptsTwos),
-			("thrs", self.ptsThrees),
-			("fors", self.ptsFours),
-			("fivs", self.ptsFives),
-			("sixs", self.ptsSixes),
+			("aces", self.ptsTop[&1]),
+			("twos", self.ptsTop[&2]),
+			("thrs", self.ptsTop[&3]),
+			("fors", self.ptsTop[&4]),
+			("fivs", self.ptsTop[&5]),
+			("sixs", self.ptsTop[&6]),
 			("preBonus", self.sumPreBonus),
 			("bonus", self.bonus),
 			("pstBonus", self.sumPostBonus),
-			("thrKnd", self.threeOfAKind),
-			("forKnd", self.fourOfAKind),
-			("fullH", self.fullHouse),
-			("smStr", self.smallStraight),
-			("bgStr", self.bigStraight),
-			("yhtz", self.yahtzee),
-			("chnc", self.chance),
+			("thrKnd", self.ptsBottom[&7]),
+			("forKnd", self.ptsBottom[&8]),
+			("fullH", self.ptsBottom[&9]),
+			("smStr", self.ptsBottom[&10]),
+			("bgStr", self.ptsBottom[&11]),
+			("yhtz", self.ptsBottom[&12]),
+			("chnc", self.ptsBottom[&13]),
 			("sumBot", self.sumBottom),
 			("sumTop", self.sumTop),
 			("total", self.total),
@@ -105,27 +71,24 @@ impl Yahtzee {
 
 impl Default for Yahtzee {
 	fn default() -> Self {
+		let ptsTop: HashMap<u16, u16> = [(1, 0), (2, 0), (3, 0), (4, 0), (5, 0), (6, 0)].iter().cloned().collect();
+		let ptsBottom: HashMap<u16, u16> = [(7, 0), (8, 0), (9, 0), (10, 0), (11, 0), (12, 0), (13, 0)].iter().cloned().collect();
+
 		Yahtzee {
-			hand:          Default::default(),
-			ptsAces:       Default::default(),
-			ptsTwos:       Default::default(),
-			ptsThrees:     Default::default(),
-			ptsFours:      Default::default(),
-			ptsFives:      Default::default(),
-			ptsSixes:      Default::default(),
-			sumPreBonus:   Default::default(),
-			bonus:         Default::default(),
-			sumPostBonus:  Default::default(),
-			threeOfAKind:  Default::default(),
-			fourOfAKind:   Default::default(),
-			fullHouse:     Default::default(),
-			smallStraight: Default::default(),
-			bigStraight:   Default::default(),
-			yahtzee:       Default::default(),
-			chance:        Default::default(),
-			sumBottom:     Default::default(),
-			sumTop:        Default::default(),
-			total:         Default::default(),
+			ptsTop,
+			ptsBottom,
+
+			gameFinished: false,
+			hand: Default::default(),
+
+			sumPreBonus: Default::default(),
+			bonus: Default::default(),
+			sumPostBonus: Default::default(),
+
+			sumBottom: Default::default(),
+			sumTop: Default::default(),
+
+			total: Default::default(),
 		}
 	}
 }
@@ -171,15 +134,15 @@ impl Game for Yahtzee {
 
 		let mut rolls: u8 = 0;
 		let mut msg = String::new();
-		loop {
+		'gameLoop: loop {
 			println!("{esc}c{}\n{}", handlebars.render("scoreboard", &self.updateScoreboard()).unwrap(), msg, esc = (27 as char));
 			msg = String::new();
 
 			println!("Choose an action:");
+			println!("0. Exit game (currently no saving available)");
 			println!("1. Re-roll all dice");
 			println!("2. Re-roll specific dice");
 			println!("3. Assign points to field");
-			println!("4. Exit game (currently no saving available)");
 			let mut choice = String::new();
 			io::stdin().read_line(&mut choice).expect("failed to read line");
 
@@ -189,6 +152,9 @@ impl Game for Yahtzee {
 			};
 
 			match choice {
+				0 => {
+					return;
+				}
 				1 => {
 					if rolls >= 3 {
 						msg = String::from("Can roll only 3 times per turn! Please set a value now");
@@ -200,44 +166,47 @@ impl Game for Yahtzee {
 				2 => {
 					if rolls >= 3 {
 						msg = String::from("Can roll only 3 times per turn! Please set a value now");
-						continue;
+						continue 'gameLoop;
 					}
-					println!("Which dice do you want to re-roll? (seperated by comma, without spaces; example: `1,3,4`)");
+					println!("Which dice do you want to re-roll? (seperated by comma, without spaces; example: `1,3,4`); 0 to abort");
 					let mut rerollDice = String::new();
 					io::stdin().read_line(&mut rerollDice).expect("failed to read line");
 
 					let rerollDice = rerollDice.trim().split(',');
 					let mut rDice: Vec<u8> = Vec::new();
 					for rerollDie in rerollDice {
-						match rerollDie {
-							"1" => {
+						match rerollDie.trim().parse().expect(format!("failed to parse value {}", rerollDie).as_str()) {
+							0 => {
+								continue 'gameLoop;
+							}
+							1 => {
 								if !rDice.contains(&1) {
 									rDice.push(0);
 								}
 							}
-							"2" => {
+							2 => {
 								if !rDice.contains(&2) {
 									rDice.push(1);
 								}
 							}
-							"3" => {
+							3 => {
 								if !rDice.contains(&3) {
 									rDice.push(2);
 								}
 							}
-							"4" => {
+							4 => {
 								if !rDice.contains(&4) {
 									rDice.push(3);
 								}
 							}
-							"5" => {
+							5 => {
 								if !rDice.contains(&5) {
 									rDice.push(4);
 								}
 							}
 							_ => {
-								msg = format!("\nDie {} does not exist!", rerollDie);
-								continue;
+								msg = format!("Die {} does not exist!", rerollDie);
+								continue 'gameLoop;
 							}
 						}
 					}
@@ -245,7 +214,7 @@ impl Game for Yahtzee {
 					rolls += 1;
 				}
 				3 => {
-					println!("Insert current hand to which field");
+					println!("Insert current hand to which field; 0 to abort");
 					let mut field = String::new();
 					io::stdin().read_line(&mut field).expect("failed to read line");
 
@@ -257,226 +226,144 @@ impl Game for Yahtzee {
 						}
 					};
 
-					match field {
-						1 => {
-							if self.ptsAces != 0 {
-								msg = String::from("Aces already filled in");
-								continue;
-							}
-							let count = self.hand.countValue(1);
-							if count != 0 {
-								self.ptsAces = (self.hand.countValue(1) * 1) as u16;
-							} else {
-								msg = String::from("Hand does not meet requirements");
-								continue;
-							}
+					if field == 0 {
+						continue 'gameLoop;
+					} else if (1..=6).contains(&field) {
+						if self.ptsTop[&field] != 0 {
+							msg = format!("Field {} already filled in", field);
+							continue 'gameLoop;
 						}
-						2 => {
-							if self.ptsTwos != 0 {
-								msg = String::from("Twos already filled in");
-								continue;
-							}
-							let count = self.hand.countValue(2);
-							if count != 0 {
-								self.ptsTwos = (self.hand.countValue(2) * 2) as u16;
-							} else {
-								msg = String::from("Hand does not meet requirements");
-								continue;
-							}
+						let count = self.hand.countValue(field as u8) as u16;
+						if count != 0 {
+							self.ptsTop.insert(field, count * field);
+						} else {
+							msg = format!("Need at least one of {}", field);
+							continue 'gameLoop;
 						}
-						3 => {
-							if self.ptsThrees != 0 {
-								msg = String::from("Threes already filled in");
-								continue;
-							}
-							let count = self.hand.countValue(3);
-							if count != 0 {
-								self.ptsThrees = (self.hand.countValue(3) * 3) as u16;
-							} else {
-								msg = String::from("Hand does not meet requirements");
-								continue;
-							}
+					} else if (7..=13).contains(&field) {
+						if self.ptsBottom[&field] != 0 {
+							msg = format!("Field {} already filled in", field);
+							continue 'gameLoop;
 						}
-						4 => {
-							if self.ptsFours != 0 {
-								msg = String::from("Fours already filled in");
-								continue;
-							}
-							let count = self.hand.countValue(4);
-							if count != 0 {
-								self.ptsFours = (self.hand.countValue(4) * 4) as u16;
-							} else {
-								msg = String::from("Hand does not meet requirements");
-								continue;
-							}
-						}
-						5 => {
-							if self.ptsFives != 0 {
-								msg = String::from("Fives already filled in");
-								continue;
-							}
-							let count = self.hand.countValue(5);
-							if count != 0 {
-								self.ptsFives = (self.hand.countValue(5) * 5) as u16;
-							} else {
-								msg = String::from("Hand does not meet requirements");
-								continue;
-							}
-						}
-						6 => {
-							if self.ptsSixes != 0 {
-								msg = String::from("Sixes already filled in");
-								continue;
-							}
-							let count = self.hand.countValue(6);
-							if count != 0 {
-								self.ptsSixes = (self.hand.countValue(6) * 6) as u16;
-							} else {
-								msg = String::from("Hand does not meet requirements");
-								continue;
-							}
-						}
-						7 => {
-							if self.threeOfAKind != 0 {
-								msg = String::from("Three of a Kind already filled in");
-								continue;
-							}
-							let mut fits = false;
-							for i in 1..=6 {
-								if self.hand.countValue(i) >= 3 {
-									fits = true;
-									self.threeOfAKind = self.hand.sum() as u16;
-									break;
-								}
-							}
-							if !fits {
-								msg = String::from("Hand does not match reqirement");
-								continue;
-							}
-						}
-						8 => {
-							if self.fourOfAKind != 0 {
-								msg = String::from("Four of a Kind already filled in");
-								continue;
-							}
-							let mut fits = false;
-							for i in 1..=6 {
-								if self.hand.countValue(i) >= 4 {
-									fits = true;
-									self.fourOfAKind = self.hand.sum() as u16;
-									break;
-								}
-							}
-							if !fits {
-								msg = String::from("Hand does not match reqirement");
-								continue;
-							}
-						}
-						9 => {
-							if self.fullHouse != 0 {
-								msg = String::from("Full House already filled in");
-								continue;
-							}
-							let mut double = 0;
-							let mut triple = 0;
 
-							for i in 1..=6 {
-								if self.hand.countValue(i) == 2 {
-									double = i;
-								} else if self.hand.countValue(i) == 3 {
-									triple = i;
+						match field {
+							7 => {
+								let mut fits = false;
+								for i in 1..=6 {
+									if self.hand.countValue(i) >= 3 {
+										fits = true;
+										self.ptsBottom.insert(field, self.hand.sum() as u16);
+										break;
+									}
+								}
+								if !fits {
+									msg = String::from("Hand does not match reqirement");
+									continue 'gameLoop;
 								}
 							}
+							8 => {
+								let mut fits = false;
+								for i in 1..=6 {
+									if self.hand.countValue(i) >= 4 {
+										fits = true;
+										self.ptsBottom.insert(field, self.hand.sum() as u16);
+										break;
+									}
+								}
+								if !fits {
+									msg = String::from("Hand does not match reqirement");
+									continue 'gameLoop;
+								}
+							}
+							9 => {
+								let mut double = 0;
+								let mut triple = 0;
 
-							if !(double == 0 && triple == 0) {
-								self.fullHouse = 25;
-							} else {
-								msg = String::from("Hand does not meet requirements");
-							}
-						}
-						10 => {
-							if self.smallStraight != 0 {
-								msg = String::from("Small straight already filled in");
-								continue;
-							}
-							let mut success = false;
-							for i in 1..=3 {
-								if self.hand.countValue(i) >= 1 && self.hand.countValue(i + 1) >= 1 && self.hand.countValue(i + 2) >= 1 && self.hand.countValue(i + 3) >= 1 {
-									self.smallStraight = 30;
-									success = true;
-									break;
+								for i in 1..=6 {
+									if self.hand.countValue(i) == 2 {
+										double = i;
+									} else if self.hand.countValue(i) == 3 {
+										triple = i;
+									}
+								}
+
+								if !(double == 0 && triple == 0) {
+									self.ptsBottom.insert(field, 25);
+								} else {
+									msg = String::from("Hand does not meet requirements");
 								}
 							}
-							if !success {
-								msg = String::from("Hand does not meet requirements");
-								continue;
-							}
-						}
-						11 => {
-							if self.bigStraight != 0 {
-								msg = String::from("Big straight already filled in");
-								continue;
-							}
-							let mut success = false;
-							for i in 1..=2 {
-								if self.hand.countValue(i) >= 1 && self.hand.countValue(i + 1) >= 1 && self.hand.countValue(i + 2) >= 1 && self.hand.countValue(i + 3) >= 1 && self.hand.countValue(i + 4) >= 1 {
-									self.bigStraight = 40;
-									success = true;
-									break;
+							10 => {
+								let mut success = false;
+								for i in 1..=3 {
+									if self.hand.countValue(i) >= 1 && self.hand.countValue(i + 1) >= 1 && self.hand.countValue(i + 2) >= 1 && self.hand.countValue(i + 3) >= 1 {
+										self.ptsBottom.insert(field, 30);
+										success = true;
+										break;
+									}
+								}
+								if !success {
+									msg = String::from("Hand does not meet requirements");
+									continue 'gameLoop;
 								}
 							}
-							if !success {
-								msg = String::from("Hand does not meet requirements");
-								continue;
-							}
-						}
-						12 => {
-							if self.yahtzee != 0 {
-								msg = String::from("Yahtzee already filled in");
-								continue;
-							}
-							let mut fits = false;
-							for i in 1..=6 {
-								if self.hand.countValue(i) == 5 {
-									fits = true;
-									self.yahtzee = 50;
-									break;
+							11 => {
+								let mut success = false;
+								for i in 1..=2 {
+									if self.hand.countValue(i) >= 1 && self.hand.countValue(i + 1) >= 1 && self.hand.countValue(i + 2) >= 1 && self.hand.countValue(i + 3) >= 1 && self.hand.countValue(i + 4) >= 1 {
+										self.ptsBottom.insert(field, 40);
+										success = true;
+										break;
+									}
+								}
+								if !success {
+									msg = String::from("Hand does not meet requirements");
+									continue 'gameLoop;
 								}
 							}
-							if !fits {
-								msg = String::from("Hand does not match reqirement");
-								continue;
+							12 => {
+								let mut fits = false;
+								for i in 1..=6 {
+									if self.hand.countValue(i) == 5 {
+										fits = true;
+										self.ptsBottom.insert(field, 50);
+										break;
+									}
+								}
+								if !fits {
+									msg = String::from("Hand does not match reqirement");
+									continue 'gameLoop;
+								}
 							}
-						}
-						13 => {
-							if self.chance != 0 {
-								msg = String::from("Chance already filled in");
-								continue;
+							13 => {
+								self.ptsBottom.insert(field, self.hand.sum() as u16);
 							}
-							self.chance = self.hand.sum() as u16;
+							_ => {}
 						}
-						_ => {
-							msg = format!("\nField {} does not exist", field);
-							continue;
-						}
+					} else {
+						msg = format!("Field {} does not exist", field);
+						continue 'gameLoop;
 					}
 					rolls = 0;
 					self.hand.rollAll();
 				}
-				4 => {
-					return;
-				}
 				_ => {
-					msg = format!("\nOption {} is not valid", choice);
-					continue;
+					msg = format!("Option {} is not valid", choice);
+					continue 'gameLoop;
 				}
 			}
 			self.update();
+
+			if self.gameFinished {
+				println!("GAME FINISHED!");
+				println!("Your score: {}", self.total);
+				return;
+			}
 		}
 	}
 
 	fn update(&mut self) {
-		self.sumPreBonus = self.ptsAces + self.ptsTwos + self.ptsThrees + self.ptsFours + self.ptsFives + self.ptsSixes;
+		self.sumPreBonus = self.ptsTop.values().sum();
 
 		if self.sumPreBonus >= 63 {
 			self.bonus = 35;
@@ -484,9 +371,11 @@ impl Game for Yahtzee {
 
 		self.sumPostBonus = self.sumPreBonus + self.bonus;
 
-		self.sumBottom = self.threeOfAKind + self.fourOfAKind + self.fullHouse + self.smallStraight + self.bigStraight + self.yahtzee + self.chance;
+		self.sumBottom = self.ptsBottom.values().sum();
 		self.sumTop = self.sumPostBonus;
 
 		self.total = self.sumTop + self.sumBottom;
+
+		self.gameFinished = self.ptsTop.values().all(|&v| v != 0) && self.ptsBottom.values().all(|&v| v != 0);
 	}
 }
