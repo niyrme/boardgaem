@@ -168,7 +168,7 @@ impl Game for Yahtzee {
 						msg = String::from("Can roll only 3 times per turn! Please set a value now");
 						continue 'gameLoop;
 					}
-					println!("Which dice do you want to re-roll? (seperated by comma, without spaces; example: `1,3,4`); 0 to abort");
+					println!("Which dice do you want to re-roll? (seperated by comma, example: `1, 3, 4`); 0 to abort");
 					let mut rerollDice = String::new();
 					io::stdin().read_line(&mut rerollDice).expect("failed to read line");
 
