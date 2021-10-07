@@ -9,7 +9,6 @@ use super::Game;
 
 pub mod die;
 pub mod hand;
-pub mod rules;
 
 pub struct Yahtzee {
 	gameFinished: bool,
