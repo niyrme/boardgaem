@@ -2,6 +2,7 @@
 name = "boardgaem"
 version = "0.1.3"
 edition = "2018"
+resolver = "2"
 
 [dependencies]
 rand = "0.8.4"
