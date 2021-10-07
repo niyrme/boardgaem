@@ -10,6 +10,8 @@ use super::Game;
 pub mod die;
 pub mod hand;
 
+const REQUIREMENTS_NOT_MET: &str = "Hand does not meet requirements!";
+
 pub struct Yahtzee {
 	gameFinished: bool,
 	hand:         Hand,
@@ -65,6 +67,43 @@ impl Yahtzee {
 		.iter()
 		.cloned()
 		.collect()
+	}
+
+	fn xOfAKind(&mut self, x: u8) -> bool {
+		for i in 1..=6 {
+			if self.hand.countValue(i) >= x {
+				return true;
+			}
+		}
+		false
+	}
+
+	fn isStraight(&mut self, field: u16) -> bool {
+		let mut straight: u8 = 0;
+
+		for i in 1..=3 {
+			if self.hand.countValue(i) >= 1 && self.hand.countValue(i + 1) >= 1 && self.hand.countValue(i + 2) >= 1 && self.hand.countValue(i + 3) >= 1 {
+				straight = 1;
+			}
+			if straight == 1 && self.hand.countValue(i + 4) >= 1 {
+				straight = 2;
+				break;
+			}
+		}
+
+		return (field == 10 && straight > 0) || (field == 11 && straight == 2);
+	}
+
+	fn assignPoints(&mut self, field: u16, value: u16) {
+		if !(1..=13).contains(&field) {
+			panic!("Field must be in range of 1 to 13");
+		}
+
+		if (1..=6).contains(&field) {
+			self.ptsTop.insert(field, value);
+		} else {
+			self.ptsBottom.insert(field, value);
+		}
 	}
 }
 
@@ -225,124 +264,94 @@ impl Game for Yahtzee {
 						}
 					};
 
-					if field == 0 {
-						continue 'gameLoop;
-					} else if (1..=6).contains(&field) {
+					if (1..=6).contains(&field) {
 						if self.ptsTop[&field] != 0 {
-							msg = format!("Field {} already filled in", field);
-							continue 'gameLoop;
-						}
-						let count = self.hand.countValue(field as u8) as u16;
-						if count != 0 {
-							self.ptsTop.insert(field, count * field);
-						} else {
-							msg = format!("Need at least one of {}", field);
+							msg = format!("Field {} already filled in!", field);
 							continue 'gameLoop;
 						}
 					} else if (7..=13).contains(&field) {
 						if self.ptsBottom[&field] != 0 {
-							msg = format!("Field {} already filled in", field);
+							msg = format!("Field {} already filled in!", field);
 							continue 'gameLoop;
 						}
-
-						match field {
-							7 => {
-								let mut fits = false;
-								for i in 1..=6 {
-									if self.hand.countValue(i) >= 3 {
-										fits = true;
-										self.ptsBottom.insert(field, self.hand.sum() as u16);
-										break;
-									}
-								}
-								if !fits {
-									msg = String::from("Hand does not match reqirement");
-									continue 'gameLoop;
-								}
-							}
-							8 => {
-								let mut fits = false;
-								for i in 1..=6 {
-									if self.hand.countValue(i) >= 4 {
-										fits = true;
-										self.ptsBottom.insert(field, self.hand.sum() as u16);
-										break;
-									}
-								}
-								if !fits {
-									msg = String::from("Hand does not match reqirement");
-									continue 'gameLoop;
-								}
-							}
-							9 => {
-								let mut double = 0;
-								let mut triple = 0;
-
-								for i in 1..=6 {
-									if self.hand.countValue(i) == 2 {
-										double = i;
-									} else if self.hand.countValue(i) == 3 {
-										triple = i;
-									}
-								}
-
-								if !(double == 0 && triple == 0) {
-									self.ptsBottom.insert(field, 25);
-								} else {
-									msg = String::from("Hand does not meet requirements");
-								}
-							}
-							10 => {
-								let mut success = false;
-								for i in 1..=3 {
-									if self.hand.countValue(i) >= 1 && self.hand.countValue(i + 1) >= 1 && self.hand.countValue(i + 2) >= 1 && self.hand.countValue(i + 3) >= 1 {
-										self.ptsBottom.insert(field, 30);
-										success = true;
-										break;
-									}
-								}
-								if !success {
-									msg = String::from("Hand does not meet requirements");
-									continue 'gameLoop;
-								}
-							}
-							11 => {
-								let mut success = false;
-								for i in 1..=2 {
-									if self.hand.countValue(i) >= 1 && self.hand.countValue(i + 1) >= 1 && self.hand.countValue(i + 2) >= 1 && self.hand.countValue(i + 3) >= 1 && self.hand.countValue(i + 4) >= 1 {
-										self.ptsBottom.insert(field, 40);
-										success = true;
-										break;
-									}
-								}
-								if !success {
-									msg = String::from("Hand does not meet requirements");
-									continue 'gameLoop;
-								}
-							}
-							12 => {
-								let mut fits = false;
-								for i in 1..=6 {
-									if self.hand.countValue(i) == 5 {
-										fits = true;
-										self.ptsBottom.insert(field, 50);
-										break;
-									}
-								}
-								if !fits {
-									msg = String::from("Hand does not match reqirement");
-									continue 'gameLoop;
-								}
-							}
-							13 => {
-								self.ptsBottom.insert(field, self.hand.sum() as u16);
-							}
-							_ => {}
-						}
 					} else {
-						msg = format!("Field {} does not exist", field);
+						msg = format!("Field {} does not exist!", field);
 						continue 'gameLoop;
 					}
+
+					match field {
+						0 => {
+							continue 'gameLoop;
+						}
+						1..=6 => {
+							let count = self.hand.countValue(field as u8) as u16;
+							if count != 0 {
+								self.assignPoints(field, count * field);
+							} else {
+								msg = format!("Need at least one of {}!", field);
+								continue 'gameLoop;
+							}
+						}
+						7 | 8 | 12 => {
+							let fits = match field {
+								7 => self.xOfAKind(3),
+								8 => self.xOfAKind(4),
+								12 => self.xOfAKind(5),
+								_ => unreachable!(),
+							};
+
+							if fits {
+								self.ptsBottom.insert(field, match field {
+									7 | 8 => self.hand.sum() as u16,
+									12 => 50,
+									_ => unreachable!(),
+								});
+							} else {
+								msg = String::from(REQUIREMENTS_NOT_MET);
+								continue 'gameLoop;
+							}
+						}
+						9 => {
+							let mut double = false;
+							let mut triple = false;
+
+							for i in 1..=6 {
+								match self.hand.countValue(i) {
+									2 => {
+										double = true;
+									}
+									3 => {
+										triple = true;
+									}
+									_ => {}
+								}
+							}
+
+							if double && triple {
+								self.assignPoints(9, 25);
+							} else {
+								msg = String::from(REQUIREMENTS_NOT_MET);
+								continue 'gameLoop;
+							}
+						}
+						10 | 11 => {
+							if self.isStraight(field) {
+								self.assignPoints(field, match field {
+									10 => 30,
+									11 => 40,
+									_ => unreachable!(),
+								});
+							} else {
+								msg = String::from(REQUIREMENTS_NOT_MET);
+								continue 'gameLoop;
+							}
+						}
+						13 => {
+							self.assignPoints(13, self.hand.sum() as u16);
+						}
+						_ => unreachable!(),
+					}
+
 					rolls = 0;
 					self.hand.rollAll();
 				}
